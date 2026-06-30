@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Spelling Bee · Smart Flashcards · P5</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --primary:#4f46e5; --primary-d:#4338ca; --primary-l:#eef2ff;
+      --accent:#f59e0b;  --accent-d:#d97706;  --accent-l:#fef3c7;
+      --success:#16a34a; --success-l:#dcfce7; --success-d:#15803d;
+      --error:#e11d48;   --error-l:#ffe4e6;
+      --ink:#0f172a; --ink-2:#334155; --ink-soft:#64748b; --ink-faint:#94a3b8;
+      --surface:#ffffff; --surface-2:#f8fafc; --line:#e2e8f0; --line-2:#cbd5e1;
+      --r-sm:12px; --r:18px; --r-lg:26px;
+      --sh-sm:0 1px 2px rgba(15,23,42,.06), 0 2px 6px rgba(15,23,42,.05);
+      --sh:0 10px 30px -12px rgba(15,23,42,.22);
+      --sh-lg:0 30px 60px -28px rgba(79,70,229,.45);
+      --ease:cubic-bezier(.16,1,.3,1);
+      --display:"Lexend",system-ui,sans-serif;
+      --body:"Nunito",system-ui,-apple-system,sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{ -webkit-text-size-adjust:100%; height:100%; }
+    body{
+      font-family:var(--body); color:var(--ink); min-height:100vh; line-height:1.5;
+      background:
+        radial-gradient(900px 500px at 88% -12%, #e0e7ff 0%, transparent 60%),
+        radial-gradient(800px 520px at -8% 108%, #fef3c7 0%, transparent 55%),
+        linear-gradient(180deg,#f8fafc,#f1f5f9);
+      padding:clamp(10px,2vw,22px); -webkit-tap-highlight-color:transparent;
+      display:flex; flex-direction:column;
+    }
+    svg{display:block}
+
+    .wrap{width:100%;max-width:1080px;margin:0 auto;position:relative;z-index:1;flex:1;display:flex;flex-direction:column}
+
+    /* ---------- HEADER ---------- */
+    header{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+    .logo{width:clamp(46px,11vw,58px);height:clamp(46px,11vw,58px);flex:none;filter:drop-shadow(0 8px 14px rgba(217,119,6,.35))}
+    .title h1{font-family:var(--display);font-size:clamp(1.45rem,5vw,2.1rem);font-weight:800;letter-spacing:-.02em;line-height:1.05}
+    .title p{color:var(--ink-soft);font-size:.86rem;margin-top:2px;font-weight:700}
+    .stats{margin-left:auto;display:flex;gap:10px}
+    .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:9px 16px;text-align:center;min-width:84px;box-shadow:var(--sh-sm)}
+    .stat b{font-family:var(--display);display:block;font-size:1.4rem;line-height:1;font-weight:800;color:var(--primary)}
+    .stat.amber b{color:var(--accent-d)}
+    .stat span{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);font-weight:800;margin-top:3px;display:block}
+
+    /* ---------- TOOLBAR ---------- */
+    .toolbar{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+      padding:14px 16px;box-shadow:var(--sh-sm);margin-bottom:18px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+    .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .field label{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint)}
+    select{font:inherit;font-weight:700;font-size:.9rem;padding:10px 36px 10px 14px;border-radius:var(--r-sm);border:1.5px solid var(--line);
+      background:var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 6 8 10 12 6'/%3E%3C/svg%3E") no-repeat right 12px center;
+      color:var(--ink);cursor:pointer;-webkit-appearance:none;appearance:none;max-width:230px}
+    select:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-l)}
+    .seg{display:inline-flex;background:var(--surface-2);border:1.5px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+    .seg button{font:inherit;font-weight:800;font-size:.86rem;border:0;background:transparent;color:var(--ink-soft);padding:9px 14px;border-radius:10px;cursor:pointer;transition:.18s var(--ease);display:inline-flex;align-items:center;gap:7px}
+    .seg button svg{width:17px;height:17px}
+    .seg button[aria-pressed="true"]{background:var(--primary);color:#fff;box-shadow:0 6px 14px -6px rgba(79,70,229,.7)}
+    .switch{display:inline-flex;align-items:center;gap:9px;font-weight:800;font-size:.84rem;color:var(--ink-2);cursor:pointer;user-select:none}
+    .switch input{position:absolute;opacity:0;width:0;height:0}
+    .track{width:42px;height:24px;border-radius:99px;background:var(--line-2);position:relative;transition:.2s var(--ease);flex:none}
+    .track::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:var(--sh-sm);transition:.2s var(--ease)}
+    .switch input:checked + .track{background:var(--success)}
+    .switch input:checked + .track::after{transform:translateX(18px)}
+    .switch input:focus-visible + .track{box-shadow:0 0 0 4px var(--success-l)}
+    .icon-btn{margin-left:auto;align-self:center;display:inline-flex;align-items:center;gap:7px;font:inherit;font-weight:800;font-size:.82rem;color:var(--ink-soft);background:var(--surface-2);border:1.5px solid var(--line);padding:9px 14px;border-radius:var(--r-sm);cursor:pointer;transition:.18s var(--ease)}
+    .icon-btn svg{width:16px;height:16px}
+    .icon-btn:hover{border-color:var(--error);color:var(--error)}
+
+    /* ---------- CARD ---------- */
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh);padding:clamp(20px,4vw,44px);text-align:center;position:relative;overflow:visible;flex:1;display:flex;flex-direction:column;justify-content:center}
+    .card > *{flex:none}
+
+    .topbar{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+    .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--display);font-weight:700;font-size:.78rem;padding:7px 14px 7px 11px;border-radius:99px;letter-spacing:.02em}
+    .chip svg{width:16px;height:16px}
+    .count{margin-left:auto;font-weight:800;font-size:.8rem;color:var(--ink-faint)}
+    .progress{flex:1;height:8px;max-width:200px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+    .progress>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width .45s var(--ease)}
+
+    .illus{width:clamp(96px,26vw,140px);height:clamp(96px,26vw,140px);border-radius:30px;margin:0 auto 14px;display:grid;place-items:center;position:relative;transition:.3s var(--ease)}
+    .illus svg{width:54%;height:54%}
+    .illus::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 -8px 20px rgba(15,23,42,.06)}
+
+    .slots{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;min-height:54px;align-items:center}
+    .slot{font-family:var(--display);width:36px;height:48px;border-radius:10px;background:var(--surface-2);border:2px solid var(--line);display:grid;place-items:center;font-size:1.5rem;font-weight:800;color:var(--ink);text-transform:lowercase;transition:.2s var(--ease)}
+    .slot.filled{border-color:var(--accent);background:var(--accent-l);color:var(--accent-d)}
+    .slot.ok{border-color:var(--success);background:var(--success-l);color:var(--success-d)}
+    .slot.bad{border-color:var(--error);background:var(--error-l);color:var(--error)}
+    .slot.gap{border:none;background:none;width:14px}
+    .slot.dash{border:none;background:none;width:18px;color:var(--ink-faint)}
+
+    /* listen hero */
+    .listen{--s:clamp(94px,23vw,120px);width:var(--s);height:var(--s);border-radius:50%;border:none;cursor:pointer;
+      background:radial-gradient(circle at 34% 28%, #fcd34d, var(--accent) 56%, var(--accent-d));color:#fff;
+      display:grid;place-items:center;margin:0 auto 8px;box-shadow:0 18px 36px -12px rgba(217,119,6,.75), inset 0 -6px 14px rgba(0,0,0,.14);
+      transition:transform .14s var(--ease)}
+    .listen svg{width:42%;height:42%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.18))}
+    .listen:hover{transform:scale(1.06)} .listen:active{transform:scale(.95)}
+    .listen.speaking{animation:pulse 1.1s ease-in-out infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 18px 36px -12px rgba(217,119,6,.75), 0 0 0 0 rgba(245,158,11,.5)}50%{box-shadow:0 18px 36px -12px rgba(217,119,6,.75), 0 0 0 20px rgba(245,158,11,0)}}
+    .listen-hint{color:var(--ink-soft);font-weight:700;font-size:.84rem;margin-bottom:22px}
+
+    .tools{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+    .tool{font:inherit;font-weight:800;font-size:.85rem;cursor:pointer;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);
+      padding:10px 16px;border-radius:14px;transition:.18s var(--ease);display:inline-flex;align-items:center;gap:8px;box-shadow:var(--sh-sm)}
+    .tool svg{width:18px;height:18px;color:var(--primary)}
+    .tool:hover{border-color:var(--primary);color:var(--primary);transform:translateY(-2px)}
+    .tool:active{transform:translateY(0)}
+
+    /* answer */
+    .answer{display:flex;gap:10px;max-width:500px;margin:0 auto}
+    .answer input{flex:1;font:inherit;font-family:var(--display);font-size:clamp(1.1rem,4.6vw,1.5rem);font-weight:700;text-align:center;
+      padding:15px 18px;border-radius:16px;border:2px solid var(--line);background:var(--surface-2);color:var(--ink);letter-spacing:.06em;min-width:0;transition:.18s var(--ease)}
+    .answer input::placeholder{color:var(--ink-faint);letter-spacing:normal;font-weight:600}
+    .answer input:focus-visible{outline:none;border-color:var(--primary);background:#fff;box-shadow:0 0 0 4px var(--primary-l)}
+    .btn{font:inherit;font-family:var(--display);font-weight:700;cursor:pointer;border:none;display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:transform .14s var(--ease),box-shadow .2s var(--ease)}
+    .btn svg{width:20px;height:20px}
+    .btn-primary{color:#fff;background:linear-gradient(180deg,var(--success),var(--success-d));padding:0 24px;border-radius:16px;font-size:1rem;box-shadow:0 12px 24px -10px rgba(22,163,74,.8)}
+    .btn-primary:hover{transform:translateY(-2px)} .btn-primary:active{transform:translateY(0)}
+
+    /* mic */
+    .mic-zone{display:grid;place-items:center;gap:14px}
+    .mic{--s:clamp(82px,20vw,104px);width:var(--s);height:var(--s);border-radius:50%;border:none;cursor:pointer;
+      background:radial-gradient(circle at 34% 28%, #818cf8, var(--primary) 58%, var(--primary-d));color:#fff;display:grid;place-items:center;
+      box-shadow:0 16px 32px -12px rgba(79,70,229,.8);transition:transform .14s var(--ease)}
+    .mic svg{width:42%;height:42%}
+    .mic:hover{transform:scale(1.05)}
+    .mic.listening{background:radial-gradient(circle at 34% 28%, #fb7185, var(--error) 58%, #be123c);animation:pulse-red 1.1s infinite}
+    @keyframes pulse-red{0%,100%{box-shadow:0 16px 32px -12px rgba(225,29,72,.7),0 0 0 0 rgba(225,29,72,.5)}50%{box-shadow:0 16px 32px -12px rgba(225,29,72,.7),0 0 0 18px rgba(225,29,72,0)}}
+    .heard{font-weight:700;font-size:1rem;min-height:1.4em;color:var(--ink-soft);max-width:460px;display:flex;flex-direction:column;align-items:center;gap:6px} .heard b{color:var(--ink)}
+    .heardline{display:block;font-weight:700;font-size:.95rem;color:var(--ink-2);line-height:1.5} .heardline b{color:var(--ink)}
+
+    /* feedback */
+    .msg{font-family:var(--display);font-weight:700;font-size:1.12rem;margin-top:18px;display:inline-flex;align-items:center;gap:9px}
+    .msg svg{width:22px;height:22px}
+    .msg.win{color:var(--success-d)} .msg.lose{color:var(--error)}
+
+    /* learn panel */
+    .learn{margin-top:20px;background:linear-gradient(180deg,#fffdf8,#fef9ee);border:1.5px solid var(--accent-l);border-radius:var(--r);padding:20px;text-align:left;animation:rise .35s var(--ease)}
+    @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    .learn-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .learn-word{font-family:var(--display);font-size:clamp(1.5rem,6vw,2rem);font-weight:800;color:var(--ink)}
+    .say{width:40px;height:40px;border-radius:12px;border:none;background:var(--accent);color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 8px 16px -7px rgba(217,119,6,.8);transition:transform .14s var(--ease)}
+    .say svg{width:20px;height:20px} .say:hover{transform:scale(1.08)}
+    .badge{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--display);font-weight:700;font-size:.74rem;color:var(--success-d);background:var(--success-l);padding:6px 11px;border-radius:99px}
+    .badge svg{width:14px;height:14px}
+    .learn-es{display:flex;align-items:center;gap:9px;margin-top:10px;font-weight:800;font-size:1.08rem;color:var(--accent-d)}
+    .tag{font-family:var(--display);font-size:.66rem;font-weight:800;letter-spacing:.06em;background:var(--accent);color:#fff;padding:3px 8px;border-radius:7px}
+    .learn-ex{display:flex;gap:9px;margin-top:12px;font-size:1rem;color:var(--ink-2);font-weight:600;font-style:italic}
+    .learn-ex svg{width:18px;height:18px;color:var(--ink-faint);flex:none;margin-top:3px}
+    .learn-tip{display:flex;gap:9px;margin-top:14px;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:12px 15px;font-weight:700;font-size:.92rem;color:var(--ink-2)}
+    .learn-tip svg{width:18px;height:18px;color:var(--accent);flex:none;margin-top:2px}
+    .learn-tip b{color:var(--accent-d)}
+
+    .actions{margin-top:18px;display:flex;gap:11px;justify-content:center;flex-wrap:wrap}
+    .btn-next{color:#fff;background:linear-gradient(180deg,var(--primary),var(--primary-d));padding:14px 30px;border-radius:16px;font-size:1.04rem;box-shadow:0 14px 26px -10px rgba(79,70,229,.8)}
+    .btn-next:hover{transform:translateY(-2px)}
+    .btn-ghost{color:var(--ink-2);background:var(--surface);border:1.5px solid var(--line);padding:12px 22px;border-radius:16px;font-size:.96rem;box-shadow:var(--sh-sm)}
+    .btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+
+    /* done */
+    .done{text-align:center;padding:18px 0}
+    .done .trophy{width:96px;height:96px;margin:0 auto 8px;color:var(--accent)}
+    .done h2{font-family:var(--display);font-size:clamp(1.5rem,5vw,2.1rem);font-weight:800;color:var(--success-d);margin:6px 0}
+    .done p{color:var(--ink-soft);font-weight:700;font-size:1.05rem;margin-bottom:20px} .done p b{color:var(--ink)}
+    .ring-row{display:flex;gap:26px;justify-content:center;margin-bottom:22px;flex-wrap:wrap}
+    .ring{text-align:center}
+    .ring b{font-family:var(--display);display:block;font-size:1.8rem;font-weight:800;color:var(--primary)}
+    .ring span{font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint)}
+    .miss{max-width:520px;margin:0 auto 20px;text-align:left;background:var(--surface-2);border:1.5px solid var(--line);border-radius:16px;padding:14px 16px}
+    .miss h4{font-family:var(--display);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--error);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+    .miss ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+    .miss li{display:flex;align-items:baseline;gap:10px;font-weight:700}
+    .miss li b{font-family:var(--display);color:var(--ink);min-width:120px}
+    .miss li span{color:var(--ink-soft);font-size:.9rem}
+
+    .hidden{display:none!important}
+    .warn{display:flex;gap:10px;background:var(--error-l);border:1.5px solid #fda4af;color:#9f1239;padding:12px 15px;border-radius:14px;font-weight:700;font-size:.86rem;margin-bottom:16px;text-align:left}
+    .warn svg{width:20px;height:20px;flex:none;margin-top:1px}
+    footer{text-align:center;color:var(--ink-faint);font-size:.78rem;margin-top:24px;font-weight:700;line-height:1.7}
+    footer b{color:var(--ink-soft)}
+
+    .icon-btn.alt:hover{border-color:var(--primary);color:var(--primary)}
+
+    /* ---------- MODAL ---------- */
+    .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:100;padding:20px;animation:fade .2s var(--ease)}
+    @keyframes fade{from{opacity:0}to{opacity:1}}
+    .modal{position:relative;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:26px;animation:rise .3s var(--ease)}
+    .modal h3{font-family:var(--display);font-size:1.3rem;font-weight:800;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+    .modal h3 svg{width:24px;height:24px;color:var(--primary)}
+    .modal-sub{color:var(--ink-soft);font-size:.9rem;font-weight:600;margin-bottom:18px}
+    .switch.big{margin-bottom:18px;padding:12px 14px;background:var(--surface-2);border:1.5px solid var(--line);border-radius:14px;width:100%;font-size:.95rem}
+    .modal-field{margin-bottom:16px}
+    .modal-field label{display:block;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);margin-bottom:6px}
+    .modal-field input,.modal-field select{width:100%;font:inherit;font-weight:700;font-size:.95rem;padding:11px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface-2);color:var(--ink)}
+    .modal-field input:focus-visible,.modal-field select:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-l)}
+    .modal-field small{display:block;margin-top:6px;color:var(--ink-faint);font-size:.76rem;font-weight:600;line-height:1.4}
+    .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+    .modal-actions .btn{padding:11px 20px;border-radius:14px;font-size:.95rem}
+    .modal-msg{margin-top:12px;font-weight:700;font-size:.85rem;min-height:1.2em;text-align:center}
+    .modal-msg.ok{color:var(--success-d)} .modal-msg.err{color:var(--error)}
+    .modal-x{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:10px;border:none;background:var(--surface-2);color:var(--ink-soft);font-size:1.4rem;line-height:1;cursor:pointer;transition:.15s var(--ease)}
+    .modal-x:hover{background:var(--error-l);color:var(--error)}
+    .engine-tag{display:inline-flex;align-items:center;gap:6px;font-weight:800;color:var(--accent-d)}
+
+    @media (max-width:480px){.stats{width:100%;margin-left:0}.stat{flex:1}.icon-btn{margin-left:0}.toolbar{gap:14px}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fcd34d"/><stop offset="1" stop-color="#d97706"/>
+        </linearGradient></defs>
+        <path d="M24 2.5 43 13.25v21.5L24 45.5 5 34.75v-21.5z" fill="url(#lg)"/>
+        <path d="M16 30V18l8-1.6V30" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M28 30V16l4-.8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M16 24l8-1.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+      <div class="title">
+        <h1>Spelling Bee</h1>
+        <p>Smart Flashcards &middot; Primary 5 &middot; 120 words</p>
+      </div>
+      <div class="stats">
+        <div class="stat amber"><b id="statMaster">0</b><span>Mastered</span></div>
+        <div class="stat"><b id="statStreak">0</b><span>Streak</span></div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="field">
+        <label for="catSel">Topic</label>
+        <select id="catSel"></select>
+      </div>
+      <div class="field">
+        <label>Mode</label>
+        <div class="seg" role="group" aria-label="Mode">
+          <button id="modePractice" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>
+            Practice
+          </button>
+          <button id="modeExam" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Exam
+          </button>
+          <button id="modeSay" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></svg>
+            Say it
+          </button>
+        </div>
+      </div>
+      <button class="icon-btn alt" id="audioBtn" title="Pronunciation setup (API key)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      </button>
+      <button class="icon-btn" id="resetBtn" title="Borrar progreso guardado">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+    </div>
+
+    <main class="card">
+      <div id="warn" class="warn hidden"></div>
+
+      <!-- PRACTICE -->
+      <div id="practiceView">
+        <div class="topbar">
+          <span class="chip" id="chip">Topic</span>
+          <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+          <span class="count" id="count">1 / 1</span>
+        </div>
+
+        <div class="illus" id="illus" aria-hidden="true"></div>
+        <div class="slots" id="slots"></div>
+
+        <button class="listen" id="playBtn" aria-label="Listen to the word">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>
+        </button>
+        <p class="listen-hint" id="listenHint">Tap to hear the word in English</p>
+
+        <div class="tools" id="toolsRow">
+          <button class="tool" id="slowBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+            Spell it out
+          </button>
+          <button class="tool" id="useItBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            In a sentence
+          </button>
+        </div>
+
+        <!-- WRITE -->
+        <div id="typeZone">
+          <form class="answer" id="answerForm" autocomplete="off">
+            <input id="answerInput" type="text" placeholder="Spell the word…" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="Spell the word" />
+            <button class="btn btn-primary" type="submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Check
+            </button>
+          </form>
+        </div>
+
+        <!-- SPEAK -->
+        <div id="voiceZone" class="mic-zone hidden">
+          <button class="mic" id="micBtn" aria-label="Speak the word">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></svg>
+          </button>
+          <p class="heard" id="heard">Tap the mic and say the word — I'll check your pronunciation</p>
+        </div>
+
+        <div id="feedback" aria-live="polite"></div>
+
+        <!-- LEARN -->
+        <div class="learn hidden" id="learn">
+          <div class="learn-head">
+            <span class="learn-word" id="lWord">word</span>
+            <button class="say" id="lSay" aria-label="Hear the word again">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+            </button>
+            <span class="badge hidden" id="lBadge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Mastered
+            </span>
+          </div>
+          <div class="learn-es"><span class="tag">ES</span><span id="lEs">traducción</span></div>
+          <div class="learn-ex">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span id="lEx">Example sentence.</span>
+          </div>
+          <div class="learn-tip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M15 14c.2-1 .7-1.7 1.4-2.5A4.6 4.6 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/></svg>
+            <span id="lTip">tip</span>
+          </div>
+        </div>
+
+        <div class="actions hidden" id="nextRow">
+          <button class="btn btn-ghost" id="repeatBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>
+            Try again
+          </button>
+          <button class="btn btn-next" id="nextBtn">
+            Next word
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- DONE -->
+      <div id="doneView" class="done hidden">
+        <svg class="trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.7V17c0 .6-.5 1-.97 1.2C7.85 18.8 7 20.2 7 22"/><path d="M14 14.7V17c0 .6.5 1 .97 1.2C16.15 18.8 17 20.2 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+        <h2 id="doneTitle">Round complete!</h2>
+        <p id="doneSub">Great job!</p>
+        <div class="ring-row">
+          <div class="ring"><b id="ringRight">0</b><span id="ringRightL">Correct</span></div>
+          <div class="ring"><b id="ringMaster">0</b><span id="ringMasterL">Mastered</span></div>
+          <div class="ring"><b id="ringPct">0%</b><span id="ringPctL">Accuracy</span></div>
+        </div>
+        <div class="miss hidden" id="missList"></div>
+        <div class="actions">
+          <button class="btn btn-ghost" id="reviewBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>
+            Practice again
+          </button>
+          <button class="btn btn-next" id="newRoundBtn">
+            New round
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      Built for Ian &middot; Listen, spell &amp; learn English.<br/>
+      Natural British voice (ElevenLabs) &middot; word &amp; spelling audio works <b>offline</b> &middot; progress saved on this device.
+    </footer>
+  </div>
+
+  <!-- AUDIO / ELEVENLABS MODAL -->
+  <div class="modal-bg hidden" id="audioModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></svg>
+        Pronunciation check
+      </h3>
+      <p class="modal-sub">The word, spelling &amp; sentence audio already work offline. To let Ian <b>practise speaking</b> (the “Say it” mode), paste your ElevenLabs key — it listens and corrects his pronunciation. Needs internet.</p>
+
+      <div class="modal-field">
+        <label for="elKeyInput">ElevenLabs API key</label>
+        <input id="elKeyInput" type="password" placeholder="sk_…" autocomplete="off" spellcheck="false" />
+        <small>Se guarda solo en este dispositivo (localStorage). Nunca se incluye en el archivo.</small>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="elTestBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Test key
+        </button>
+        <button class="btn btn-next" id="modalSave">Save</button>
+      </div>
+      <p class="modal-msg" id="elTestMsg"></p>
+      <button class="modal-x" id="modalClose" aria-label="Close">&times;</button>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    "use strict";
+
+    /* ============ WORD DATA (P5) ============
+       [ english, español, topic, spelling tip (ES), example (EN) ] */
+    const RAW = [
+      ["drums","tambores / batería","Music","Termina en <b>-s</b>. Suena 'drams'.","I play the drums in the band."],
+      ["art","arte","School","Solo 3 letras: <b>a-r-t</b>.","I love my art class."],
+      ["bread","pan","Food","La <b>'ea'</b> suena 'e': br-ea-d.","I eat bread for breakfast."],
+      ["January","enero","Months","<b>Mayúscula</b>. Termina en -ary.","My birthday is in January."],
+      ["belt","cinturón","Clothes","Cuatro letras: <b>b-e-l-t</b>.","He wears a brown belt."],
+      ["city","ciudad","Places","La <b>'c'</b> suena 's'. Termina en -y.","London is a big city."],
+      ["flute","flauta","Music","La <b>'e'</b> final es muda: flut-e.","She plays the flute."],
+      ["drama","teatro / drama","School","Dos veces la <b>'a'</b>: dr-a-m-a.","We have drama on Mondays."],
+      ["calculator","calculadora","School","Termina en <b>-or</b>, no -er.","Use a calculator for maths."],
+      ["bag of apples","bolsa de manzanas","Food","3 palabras. <b>'apples'</b> doble p.","I bought a bag of apples."],
+      ["butter","mantequilla","Food","Doble <b>t</b>: bu-tt-er.","Put butter on the bread."],
+      ["birthday","cumpleaños","Special","Une <b>birth + day</b>.","Happy birthday to you!"],
+      ["coat","abrigo","Clothes","La <b>'oa'</b> juntas: c-oa-t.","Wear your coat, it's cold."],
+      ["listen","escuchar","Verbs","La <b>'t' es muda</b>: 'lisen'.","Listen to the teacher."],
+      ["February","febrero","Months","¡Lleva una <b>r escondida</b>: Feb-r-uary!","February is the shortest month."],
+      ["golf","golf","Sports","Igual que en español: <b>g-o-l-f</b>.","My dad plays golf."],
+      ["English","inglés","School","<b>Mayúscula</b>. 'gl' juntas.","I am learning English."],
+      ["camera","cámara","Tech","Termina en <b>-era</b>.","Smile for the camera!"],
+      ["chili peppers","ajíes picantes","Food","2 palabras. <b>'peppers'</b> doble p.","Chili peppers are very spicy."],
+      ["box of chocolates","caja de chocolates","Food","<b>'chocolates'</b> termina en -es.","She gave me a box of chocolates."],
+      ["town","pueblo","Places","La <b>'ow'</b> suena 'au': t-ow-n.","I live in a small town."],
+      ["dress","vestido","Clothes","Doble <b>s</b>: dre-ss.","She has a pretty red dress."],
+      ["guitar","guitarra","Music","La <b>'u' es muda</b>. Termina en -ar.","He plays the guitar."],
+      ["cell phone","celular","Tech","2 palabras. <b>'cell'</b> doble l.","My cell phone is new."],
+      ["ham","jamón","Food","Cortita: <b>h-a-m</b>.","I like ham sandwiches."],
+      ["cover","tapa / portada","School","<b>c-o-v-er</b>.","The book cover is blue."],
+      ["March","marzo","Months","<b>Mayúscula</b>. 'ch' al final.","Spring starts in March."],
+      ["Australia","Australia","Countries","<b>Mayúscula</b>. Termina en -ia.","Kangaroos live in Australia."],
+      ["hockey","hockey","Sports","La <b>'ck'</b> juntas. Termina en -ey.","We play hockey at school."],
+      ["gloves","guantes","Clothes","Termina en <b>-es</b> (plural).","Put on your gloves."],
+      ["games console","consola de juegos","Tech","2 palabras. <b>'console'</b> con -e.","I want a new games console."],
+      ["jelly","gelatina","Food","Doble <b>l</b>: je-ll-y.","Red jelly is yummy."],
+      ["jeans","jeans","Clothes","La <b>'ea'</b> juntas. Termina en -s.","Blue jeans are cool."],
+      ["geography","geografía","School","Empieza <b>geo-</b>. 'ph' suena 'f'.","Geography is about maps."],
+      ["April","abril","Months","<b>Mayúscula</b>. Una sola p.","It rains a lot in April."],
+      ["piano","piano","Music","Igual que en español: <b>p-i-a-n-o</b>.","She plays the piano."],
+      ["Brazil","Brasil","Countries","<b>Mayúscula</b>. Una sola l: -il.","Football is big in Brazil."],
+      ["mushrooms","hongos","Food","La <b>'sh'</b> juntas. Termina en -s.","I don't like mushrooms."],
+      ["bunch of bananas","racimo de bananas","Food","<b>'bananas'</b> = tres veces la 'a'.","A bunch of bananas, please."],
+      ["smartboard","pizarra digital","School","Une <b>smart + board</b>.","Write it on the smartboard."],
+      ["gymnastics","gimnasia","Sports","Empieza <b>gym-</b>. La 'y' suena 'i'.","She does gymnastics."],
+      ["conductor","director de orquesta","Music","Termina en <b>-or</b>.","The conductor leads the band."],
+      ["saxophone","saxofón","Music","Lleva <b>'x'</b> y 'ph' = 'f'.","He plays the saxophone."],
+      ["Italy","Italia","Countries","<b>Mayúscula</b>. Una t. Termina en -y.","Pizza comes from Italy."],
+      ["May","mayo","Months","Cortita y con <b>mayúscula</b>: M-a-y.","Flowers grow in May."],
+      ["percussion","percusión","Music","Doble <b>s</b>: percu-ss-ion.","Drums are percussion."],
+      ["leggings","calzas","Clothes","Doble <b>g</b>: le-gg-ings.","She wears black leggings."],
+      ["strings","cuerdas","Music","Empieza <b>str-</b>. Termina en -ings.","The violin has strings."],
+      ["brass","metales (instrumentos)","Music","Doble <b>s</b>: bra-ss.","Trumpets are brass instruments."],
+      ["olives","aceitunas","Food","Termina en <b>-es</b>.","I like green olives."],
+      ["plus","más (suma)","Maths","<b>p-l-u-s</b>.","Two plus two is four."],
+      ["June","junio","Months","<b>Mayúscula</b>. 'e' final muda.","Summer starts in June."],
+      ["history","historia","School","Lleva <b>-ory</b> al final.","I like history class."],
+      ["table tennis","ping pong","Sports","<b>'tennis'</b>: doble n y doble s.","Let's play table tennis."],
+      ["onions","cebollas","Food","Empieza <b>oni-</b>. Termina en -s.","Onions make me cry."],
+      ["Japan","Japón","Countries","<b>Mayúscula</b>. Una sola p.","Sushi comes from Japan."],
+      ["sandals","sandalias","Clothes","Termina en <b>-als</b>.","Wear sandals at the beach."],
+      ["woodwind","viento-madera","Music","Une <b>wood + wind</b>.","The flute is a woodwind."],
+      ["jar of olives","frasco de aceitunas","Food","<b>'jar'</b> = j-a-r.","A jar of olives is on the table."],
+      ["July","julio","Months","<b>Mayúscula</b>. Termina en -ly.","It's very hot in July."],
+      ["judo","judo","Sports","<b>j-u-d-o</b>.","He does judo on Fridays."],
+      ["watch videos","ver videos","Activities","2 palabras. <b>'watch'</b> lleva 'tch'.","I watch videos online."],
+      ["Mexico","México","Countries","<b>Mayúscula</b>. Lleva 'x'.","Tacos come from Mexico."],
+      ["scarf","bufanda","Clothes","Empieza <b>sc-</b>. Termina en -arf.","Wrap the scarf around you."],
+      ["shirt","camisa","Clothes","La <b>'sh' + 'ir'</b>: sh-ir-t.","He wears a white shirt."],
+      ["math","matemáticas","School","<b>m-a-t-h</b>. Termina en 'th'.","Math is fun."],
+      ["August","agosto","Months","<b>Mayúscula</b>. 'au' juntas.","We travel in August."],
+      ["minus","menos (resta)","Maths","<b>m-i-n-u-s</b>.","Five minus one is four."],
+      ["potatoes","papas","Food","Termina en <b>-oes</b> (¡con e!).","I love mashed potatoes."],
+      ["stadium","estadio","Places","Empieza <b>sta-</b>. Termina en -ium.","The football stadium is huge."],
+      ["Spain","España","Countries","<b>Mayúscula</b>. 'ai' juntas.","Spain has lovely beaches."],
+      ["monument","monumento","Places","Termina en <b>-ment</b>.","We visited a famous monument."],
+      ["times","por (multiplicar)","Maths","Termina en <b>-es</b>. 'two times three'.","Two times three is six."],
+      ["sneakers","zapatillas","Clothes","Empieza <b>sn-</b>. Termina en -ers.","My sneakers are brand new."],
+      ["twenty-eight","veintiocho","Numbers","<b>Con guion</b>. 'eight' = ei-gh-t.","February has twenty-eight days."],
+      ["headphones","audífonos","Tech","<b>head + phones</b>. 'ph' = 'f'.","I listen with my headphones."],
+      ["building","edificio","Places","<b>build + ing</b>. La 'u' es muda.","That building is very tall."],
+      ["music","música","School","Termina en <b>-ic</b>. La 's' suena 'z'.","I love listening to music."],
+      ["ninety","noventa","Numbers","<b>nine + ty</b>: nine-ty.","My great-granny is ninety."],
+      ["September","septiembre","Months","<b>Mayúscula</b>. Termina en -ber.","School starts in September."],
+      ["trophy","trofeo","Sports","La <b>'ph'</b> = 'f'. Termina en -y.","We won the trophy!"],
+      ["thirty-one","treinta y uno","Numbers","<b>Con guion</b>: thirty-one.","May has thirty-one days."],
+      ["sunglasses","lentes de sol","Clothes","<b>sun + glasses</b>. Doble s.","Wear sunglasses in the sun."],
+      ["laptop","laptop / portátil","Tech","Une <b>lap + top</b>.","My laptop is really fast."],
+      ["countryside","el campo","Places","Une <b>country + side</b>.","We love the countryside."],
+      ["sausages","salchichas","Food","Termina en <b>-ages</b>.","Sausages for dinner tonight."],
+      ["October","octubre","Months","<b>Mayúscula</b>. Termina en -ber.","Halloween is in October."],
+      ["tablet","tablet","Tech","Une <b>tab + let</b>.","I draw on my tablet."],
+      ["pottery","cerámica","School","Doble <b>t</b>: po-tt-ery.","We made pottery in art."],
+      ["tower","torre","Places","La <b>'ow'</b> suena 'au'.","The tower is very high."],
+      ["champion","campeón","Sports","Empieza <b>'ch'</b>. Termina en -ion.","She is the champion!"],
+      ["watch","reloj","Tech","Lleva <b>'tch'</b>: wa-tch.","My watch tells the time."],
+      ["shop online","comprar en línea","Activities","2 palabras: <b>shop + online</b>.","We often shop online."],
+      ["quarter","un cuarto","Maths","La <b>'qu'</b> juntas. Termina en -er.","A quarter is one fourth."],
+      ["tomatoes","tomates","Food","Termina en <b>-oes</b> (¡con e!).","Tomatoes are red and juicy."],
+      ["the USA","Estados Unidos","Countries","<b>USA</b> en mayúsculas.","New York is in the USA."],
+      ["build","construir","Verbs","La <b>'u' es muda</b>: b-u-i-l-d.","Let's build a sandcastle."],
+      ["watchband","correa de reloj","Tech","Une <b>watch + band</b>.","The watchband is made of leather."],
+      ["trumpet","trompeta","Music","<b>tr-u-m-p-et</b>.","He plays the trumpet loudly."],
+      ["eighty","ochenta","Numbers","La <b>'eigh'</b> es rara: ei-gh-ty.","Eighty is a big number."],
+      ["science","ciencia","School","Empieza <b>'sci'</b>. Termina en -ence.","Science is my favourite subject."],
+      ["dollars","dólares","Money","Doble <b>l</b>: do-ll-ars.","It costs ten dollars."],
+      ["cents","centavos","Money","La <b>'c'</b> suena 's'. -nts.","Fifty cents, please."],
+      ["the UK","el Reino Unido","Countries","<b>UK</b> en mayúsculas.","London is in the UK."],
+      ["drink","beber / bebida","Verbs","Termina en <b>-nk</b>.","I drink water every day."],
+      ["sixty","sesenta","Numbers","<b>six + ty</b>: six-ty.","An hour has sixty minutes."],
+      ["fifty-five","cincuenta y cinco","Numbers","<b>Con guion</b>: fifty-five.","There are fifty-five cars."],
+      ["November","noviembre","Months","<b>Mayúscula</b>. Termina en -ber.","It gets cold in November."],
+      ["divided by","dividido por","Maths","2 palabras: <b>divided + by</b>.","Ten divided by two is five."],
+      ["bills","billetes","Money","Doble <b>l</b>: bi-ll-s.","I have two ten-dollar bills."],
+      ["violin","violín","Music","Une <b>vio + lin</b>.","She plays the violin beautifully."],
+      ["equals","es igual a","Maths","Empieza <b>equ-</b>. Termina en -als.","Two plus two equals four."],
+      ["eat","comer","Verbs","La <b>'ea'</b> juntas: e-a-t.","I eat lunch at noon."],
+      ["coins","monedas","Money","La <b>'oi'</b> juntas. Termina en -s.","I save my coins in a jar."],
+      ["forty-three","cuarenta y tres","Numbers","<b>'forty' NO lleva u</b>. Con guion.","There are forty-three pages."],
+      ["one hundred","cien","Numbers","2 palabras: <b>one + hundred</b>.","I scored one hundred points!"],
+      ["December","diciembre","Months","<b>Mayúscula</b>. Termina en -ber.","Christmas is in December."],
+      ["volleyball","vóley","Sports","Doble l <b>dos veces</b>: vo-ll-eyba-ll.","We play volleyball on the beach."],
+      ["xylophone","xilófono","Music","¡Empieza con <b>'x'</b>! 'ph' = 'f'.","She plays the xylophone."],
+      ["suburbs","las afueras","Places","Empieza <b>sub-</b>. Termina en -urbs.","They live in the suburbs."]
+    ];
+    const WORDS = RAW.map(r => ({ en:r[0], es:r[1], cat:r[2], tip:r[3], ex:r[4] }));
+
+    /* ============ ICONS (Lucide-style) ============ */
+    const ICONS = {
+      Music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+      Food:'<path d="M12 21c1.5 0 2.7 1 4 1 3 0 6-8 6-12a4.9 4.9 0 0 0-5-4c-2.2 0-4 1.4-5 2-1-.6-2.8-2-5-2a4.9 4.9 0 0 0-5 4.8C2 14 5 22 8 22c1.3 0 2.5-1 4-1Z"/><path d="M10 2c1 .5 2 2 2 5"/>',
+      Clothes:'<path d="M20.4 3.5 16 2a4 4 0 0 1-8 0L3.6 3.5a2 2 0 0 0-1.3 2.2l.6 3.5a1 1 0 0 0 1 .8H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.2a1 1 0 0 0 1-.8l.5-3.5a2 2 0 0 0-1.3-2.2Z"/>',
+      Months:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/>',
+      Countries:'<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/>',
+      Sports:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.7V17c0 .6-.5 1-1 1.2C7.9 18.8 7 20.2 7 22"/><path d="M14 14.7V17c0 .6.5 1 1 1.2 1.2.6 2 2 2 3"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+      Numbers:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+      Maths:'<line x1="5" y1="12" x2="19" y2="12"/><circle cx="12" cy="6" r="1.3"/><circle cx="12" cy="18" r="1.3"/>',
+      Money:'<circle cx="8" cy="8" r="6"/><path d="M18.1 10.4A6 6 0 1 1 10.3 18M7 6h1.5a1.5 1.5 0 0 1 0 3H7h1.5a1.5 1.5 0 0 1 0 3H7M8 5v1m0 6v1"/>',
+      Tech:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/>',
+      School:'<path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2.5 9 2.5 12 0v-5"/>',
+      Places:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+      Verbs:'<path d="M13 2 3 14h8l-1 8 11-12h-8l1-8z"/>',
+      Activities:'<path d="M6 12h4M8 10v4M15 13h.01M18 11h.01"/><rect width="20" height="13" x="2" y="6" rx="3"/>',
+      Special:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8M16.5 8a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8"/>'
+    };
+    const CAT_COLOR = {
+      Music:"#7c3aed", Food:"#ea580c", Clothes:"#db2777", Months:"#2563eb",
+      Countries:"#059669", Sports:"#0d9488", Numbers:"#4f46e5", Maths:"#0891b2",
+      Money:"#ca8a04", Tech:"#475569", School:"#9333ea", Places:"#65a30d",
+      Verbs:"#dc2626", Activities:"#c026d3", Special:"#e11d48"
+    };
+    function catSvg(cat,sw){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||1.8}" stroke-linecap="round" stroke-linejoin="round">${ICONS[cat]||ICONS.Special}</svg>`; }
+    function tint(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+
+    /* ============ STORAGE ============ */
+    const SKEY="spellingBeeP5_v2";
+    let saved={}; try{ saved=JSON.parse(localStorage.getItem(SKEY)||"{}"); }catch(e){ saved={}; }
+    saved.mastered=saved.mastered||{};
+    saved.elKey=saved.elKey||"";
+    function persist(){ try{ localStorage.setItem(SKEY,JSON.stringify(saved)); }catch(e){} }
+    const MASTER_AT=2;
+
+    /* ============ STATE ============ */
+    const state={ mode:"practice", queue:[], i:0, streak:0, correctRun:{}, answered:false,
+                  voice:null, roundRight:0, roundTotal:0, reveal:0, examWrong:[], lastExamWrong:[] };
+
+    /* ============ DOM ============ */
+    const $=id=>document.getElementById(id);
+    const el={
+      catSel:$("catSel"), modePractice:$("modePractice"), modeExam:$("modeExam"), modeSay:$("modeSay"), resetBtn:$("resetBtn"),
+      practiceView:$("practiceView"), doneView:$("doneView"),
+      chip:$("chip"), bar:$("bar"), count:$("count"), illus:$("illus"), slots:$("slots"),
+      toolsRow:$("toolsRow"), missList:$("missList"), ringRightL:$("ringRightL"), ringMasterL:$("ringMasterL"), ringPctL:$("ringPctL"),
+      playBtn:$("playBtn"), slowBtn:$("slowBtn"), useItBtn:$("useItBtn"),
+      typeZone:$("typeZone"), answerForm:$("answerForm"), answerInput:$("answerInput"),
+      voiceZone:$("voiceZone"), micBtn:$("micBtn"), heard:$("heard"), feedback:$("feedback"),
+      learn:$("learn"), lWord:$("lWord"), lSay:$("lSay"), lBadge:$("lBadge"), lEs:$("lEs"), lEx:$("lEx"), lTip:$("lTip"),
+      nextRow:$("nextRow"), repeatBtn:$("repeatBtn"), nextBtn:$("nextBtn"),
+      statMaster:$("statMaster"), statStreak:$("statStreak"),
+      doneTitle:$("doneTitle"), doneSub:$("doneSub"), ringRight:$("ringRight"), ringMaster:$("ringMaster"), ringPct:$("ringPct"),
+      reviewBtn:$("reviewBtn"), newRoundBtn:$("newRoundBtn"), warn:$("warn"), listenHint:$("listenHint"),
+      audioBtn:$("audioBtn"), audioModal:$("audioModal"), elKeyInput:$("elKeyInput"),
+      elTestBtn:$("elTestBtn"), elTestMsg:$("elTestMsg"), modalSave:$("modalSave"), modalClose:$("modalClose")
+    };
+
+    /* ============ SPEECH SYNTH (English) ============ */
+    const synth=window.speechSynthesis;
+    let allVoices=[], autoTimer=null;
+    const englishVoices=()=>allVoices.filter(v=>/^en[-_]?/i.test(v.lang));
+    function loadVoices(){
+      // Solo respaldo: elige la mejor voz inglesa del navegador (en-GB primero).
+      if(!synth) return;
+      allVoices=synth.getVoices()||[];
+      const en=englishVoices();
+      if(en.length){
+        en.sort((a,b)=>{const r=v=>/en-GB/i.test(v.lang)?0:/en-US/i.test(v.lang)?1:2;return r(a)-r(b);});
+        state.voice=en[0];
+      }
+    }
+    function speakBrowser(text,rate){
+      if(!synth) return;
+      synth.cancel();
+      const u=new SpeechSynthesisUtterance(text);
+      const v=state.voice||englishVoices()[0]||null;
+      if(v){ u.voice=v; u.lang=v.lang; } else u.lang="en-GB";
+      u.rate=rate||.9; u.pitch=1;
+      u.onstart=()=>el.playBtn.classList.add("speaking");
+      u.onend=()=>el.playBtn.classList.remove("speaking");
+      u.onerror=()=>el.playBtn.classList.remove("speaking");
+      synth.speak(u);
+    }
+
+    /* ---- ElevenLabs (natural voice, optional) ---- */
+    const EL={ base:"https://api.elevenlabs.io/v1/text-to-speech/", model:"eleven_flash_v2_5", cache:new Map(), audio:null, VOICE:"Xb7hH8MSUJpSbSDYk0k2" };
+    const elEnabled=()=> !!saved.elKey;
+    async function elSpeak(text,rate,keyOverride,voiceOverride){
+      const voiceId=voiceOverride||EL.VOICE;
+      const apiKey=keyOverride||saved.elKey;
+      const ckey=voiceId+"|"+text;
+      let url=EL.cache.get(ckey);
+      if(!url){
+        const speed=Math.max(0.7,Math.min(1.1, rate||0.95));
+        const res=await fetch(EL.base+voiceId+"?output_format=mp3_44100_128",{
+          method:"POST",
+          headers:{ "xi-api-key":apiKey, "Content-Type":"application/json" },
+          body:JSON.stringify({ text, model_id:EL.model, voice_settings:{ stability:0.5, similarity_boost:0.8, speed } })
+        });
+        if(!res.ok) throw new Error("HTTP "+res.status);
+        url=URL.createObjectURL(await res.blob());
+        EL.cache.set(ckey,url);
+      }
+      if(EL.audio){ try{ EL.audio.pause(); }catch(e){} }
+      const a=new Audio(url); EL.audio=a;
+      el.playBtn.classList.add("speaking");
+      a.onended=()=>el.playBtn.classList.remove("speaking");
+      a.onerror=()=>el.playBtn.classList.remove("speaking");
+      await a.play();
+    }
+    function speak(text,rate){
+      if(elEnabled()){
+        if(synth) synth.cancel();
+        elSpeak(text,rate).catch(err=>{
+          el.playBtn.classList.remove("speaking");
+          speakBrowser(text,rate); // respaldo
+          if(String(err).includes("401")) showWarn("ElevenLabs: API key inválida o sin permiso. Revísala en el botón Voice ⚙️.");
+        });
+        return;
+      }
+      speakBrowser(text,rate);
+    }
+    function updateEngineUI(){
+      el.listenHint.innerHTML =
+        state.mode==="say"  ? 'Listen first, then tap the mic to say it'
+      : state.mode==="exam" ? 'Listen and spell the word — no hints'
+      :                       'Natural <span class="engine-tag">British</span> voice — tap to listen';
+    }
+
+    /* ---- Pre-generated clips (offline, natural Alice voice) ---- */
+    let currentClip=null;
+    function stopClips(){
+      if(synth) synth.cancel();
+      if(EL.audio){ try{EL.audio.pause();}catch(e){} }
+      if(currentClip){ try{currentClip.pause();}catch(e){} currentClip=null; }
+    }
+    function playLocal(src){
+      return new Promise((resolve,reject)=>{
+        stopClips();
+        const a=new Audio(src); currentClip=a; let done=false;
+        el.playBtn.classList.add("speaking");
+        const fin=ok=>{ if(done)return; done=true; el.playBtn.classList.remove("speaking"); ok?resolve():reject(new Error("nofile")); };
+        a.onended=()=>fin(true); a.onerror=()=>fin(false);
+        a.play().catch(()=>fin(false));
+      });
+    }
+    function speakWord(){ const i=state.queue[state.i]; return playLocal(`audio/word/${i}.mp3`).catch(()=>speak(cur().en)); }
+    function speakSpell(thenWord){
+      const i=state.queue[state.i];
+      return playLocal(`audio/spell/${i}.mp3`)
+        .then(()=>{ if(thenWord) return playLocal(`audio/word/${i}.mp3`); })
+        .catch(()=>speak(spellOut(cur().en),.5));
+    }
+    function speakSentence(){ const i=state.queue[state.i]; return playLocal(`audio/sentence/${i}.mp3`).catch(()=>speak(cur().ex,.9)); }
+
+    /* ============ HELPERS ============ */
+    const cur=()=>WORDS[state.queue[state.i]];
+    function norm(s){ return (s||"").toLowerCase().trim().replace(/[.,!?;:'"]/g,"").replace(/\s+/g," "); }
+    function spellOut(w){ return w.replace(/-/g," ").split("").join(", "); }
+    function masteredCount(){ return Object.keys(saved.mastered).length; }
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+    /* ============ TOPICS ============ */
+    function fillTopics(){
+      const cats=[...new Set(WORDS.map(w=>w.cat))].sort();
+      const opts=['<option value="all">All topics (120)</option>',
+                  '<option value="__review">Practice my mistakes</option>'];
+      cats.forEach(c=>{ const n=WORDS.filter(w=>w.cat===c).length; opts.push(`<option value="${c}">${c} (${n})</option>`); });
+      el.catSel.innerHTML=opts.join("");
+    }
+    function buildQueue(customPool){
+      let pool;
+      if(customPool && customPool.length){ pool=customPool.slice(); }
+      else{
+        const val=el.catSel.value;
+        if(val==="all") pool=WORDS.map((_,i)=>i);
+        else if(val==="__review") pool=WORDS.map((_,i)=>i).filter(i=>!saved.mastered[WORDS[i].en]);
+        else pool=WORDS.map((_,i)=>i).filter(i=>WORDS[i].cat===val);
+      }
+      if(!pool.length) pool=WORDS.map((_,i)=>i);
+      shuffle(pool);
+      state.queue=pool; state.i=0; state.roundRight=0; state.roundTotal=pool.length; state.correctRun={}; state.examWrong=[];
+      showDone(false); render();
+    }
+
+    /* ============ SLOTS ============ */
+    function renderSlots(word,opts){
+      opts=opts||{};
+      const reveal=opts.reveal||0, guess=opts.guess, done=opts.done, live=opts.live, color=opts.color;
+      let html="", li=0;
+      for(let k=0;k<word.length;k++){
+        const ch=word[k];
+        if(ch===" "){ html+='<span class="slot gap"></span>'; continue; }
+        if(ch==="-"){ html+='<span class="slot dash">-</span>'; continue; }
+        const tch=ch.toLowerCase();
+        if(done){
+          const gch=guess?guess[k]:undefined;
+          html+=`<span class="slot ${gch===tch?'ok':'bad'}">${tch}</span>`;
+        }else if(live){
+          // muestra la letra tecleada en vivo
+          const gch=guess?guess[k]:undefined;
+          if(gch===undefined||gch===""){ html+='<span class="slot"></span>'; }
+          else if(color){ html+=`<span class="slot ${gch===tch?'ok':'bad'}">${gch}</span>`; } // práctica: verde/rojo
+          else { html+=`<span class="slot filled">${gch}</span>`; }                            // examen: solo la letra
+        }else if(li<reveal){
+          html+=`<span class="slot filled">${tch}</span>`;
+        }else{
+          html+='<span class="slot"></span>';
+        }
+        li++;
+      }
+      el.slots.innerHTML=html;
+    }
+    // muestra en vivo lo que se va tecleando en los casilleros
+    function renderLive(){
+      if(state.answered) return;
+      if(state.mode!=="practice" && state.mode!=="exam") return;
+      renderSlots(cur().en,{live:true, guess:el.answerInput.value.toLowerCase(), color:state.mode==="practice"});
+    }
+
+    /* ============ RENDER ============ */
+    function render(){
+      clearTimeout(autoTimer);
+      const w=cur(); state.answered=false; state.reveal=0;
+      const color=CAT_COLOR[w.cat]||"#64748b";
+      el.chip.innerHTML=catSvg(w.cat,2)+w.cat;
+      el.chip.style.color=color; el.chip.style.background=tint(color,.12);
+      el.illus.style.color=color; el.illus.style.background=tint(color,.12);
+      el.illus.innerHTML=catSvg(w.cat,1.7);
+      renderSlots(w.en,{reveal:0});
+      el.feedback.innerHTML=""; el.learn.classList.add("hidden"); el.nextRow.classList.add("hidden");
+      el.answerInput.value=""; el.answerInput.disabled=false;
+      el.heard.innerHTML="Tap the mic and say the word out loud";
+      el.count.textContent=(state.i+1)+" / "+state.roundTotal;
+      el.bar.style.width=(state.i/state.roundTotal*100)+"%";
+      el.statMaster.textContent=masteredCount(); el.statStreak.textContent=state.streak;
+      if(state.mode==="type") setTimeout(()=>el.answerInput.focus(),60);
+      speakWord();
+    }
+
+    /* ============ JUDGE ============ */
+    const ICON_OK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>';
+    const ICON_NO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 9l6 6M15 9l-6 6"/></svg>';
+
+    function judge(attempt){
+      if(state.answered) return;
+      const w=cur(); const ok=norm(attempt)===norm(w.en);
+      state.answered=true; el.answerInput.disabled=true;
+      renderSlots(w.en,{done:true,guess:norm(attempt)});
+      el.bar.style.width=((state.i+1)/state.roundTotal*100)+"%";
+
+      /* ---- EXAM: sin pistas, sin requeue, auto-avanza, nota al final ---- */
+      if(state.mode==="exam"){
+        if(ok){ state.roundRight++; state.streak++; }
+        else { state.examWrong.push(state.queue[state.i]); state.streak=0; }
+        el.statStreak.textContent=state.streak;
+        el.feedback.innerHTML = ok
+          ? `<p class="msg win">${ICON_OK} Correct</p>`
+          : `<p class="msg lose">${ICON_NO} Answer: <b>${w.en}</b></p>`;
+        autoTimer=setTimeout(next,1300);
+        return;
+      }
+
+      /* ---- PRACTICE: pistas, aprende, auto-avanza al acertar ---- */
+      if(ok){
+        state.streak++; state.roundRight++;
+        state.correctRun[w.en]=(state.correctRun[w.en]||0)+1;
+        if(state.correctRun[w.en]>=MASTER_AT&&!saved.mastered[w.en]){ saved.mastered[w.en]=true; persist(); }
+        el.feedback.innerHTML=`<p class="msg win">${ICON_OK} Correct! Well done.</p>`;
+        burst();
+      }else{
+        state.streak=0; state.correctRun[w.en]=0;
+        state.queue.push(state.queue[state.i]); state.roundTotal++;
+        el.feedback.innerHTML=`<p class="msg lose">${ICON_NO} Almost — let's learn it.</p>`;
+        speakSpell(true); // deletrea y luego dice la palabra (voz Alice)
+      }
+      showLearn(w,ok);
+      el.nextRow.classList.remove("hidden");
+      el.statMaster.textContent=masteredCount(); el.statStreak.textContent=state.streak;
+      if(ok){ autoTimer=setTimeout(next,1600); } else el.nextBtn.focus(); // práctica pasa solas al acertar
+    }
+    function showLearn(w,ok){
+      el.lWord.textContent=w.en; el.lEs.textContent=w.es;
+      el.lEx.textContent="“"+w.ex+"”"; el.lTip.innerHTML=w.tip;
+      el.lBadge.classList.toggle("hidden", !saved.mastered[w.en]);
+      el.learn.classList.remove("hidden");
+    }
+    function next(){ clearTimeout(autoTimer); if(state.i+1>=state.queue.length){ state.mode==="exam"?finishExam():finishRound(); return; } state.i++; render(); }
+    function repeatWord(){ clearTimeout(autoTimer); state.correctRun[cur().en]=0; render(); }
+
+    function finishRound(){
+      const pct=Math.round(state.roundRight/Math.max(1,state.roundTotal)*100);
+      el.doneTitle.textContent=pct>=80?"Excellent round!":"Round complete!";
+      el.doneSub.innerHTML=`You did great, keep it up.`;
+      el.ringRightL.textContent="Correct"; el.ringMasterL.textContent="Mastered"; el.ringPctL.textContent="Accuracy";
+      el.ringRight.textContent=state.roundRight; el.ringMaster.textContent=masteredCount(); el.ringPct.textContent=pct+"%";
+      el.ringMaster.style.color=""; el.missList.classList.add("hidden");
+      showDone(true); el.bar.style.width="100%";
+      burst(); setTimeout(burst,280);
+    }
+    function finishExam(){
+      const total=state.roundTotal, right=state.roundRight, wrong=total-right, pct=Math.round(right/Math.max(1,total)*100), pass=pct>=80;
+      state.lastExamWrong=state.examWrong.slice();
+      el.doneTitle.textContent = pass ? "You passed! 🎉" : "Keep practising!";
+      el.doneSub.innerHTML = pass ? "Great work on the exam." : "Review the words below, then try again.";
+      el.ringRightL.textContent="Correct"; el.ringMasterL.textContent="Wrong"; el.ringPctL.textContent="Grade";
+      el.ringRight.textContent=right; el.ringMaster.textContent=wrong; el.ringPct.textContent=pct+"%";
+      el.ringMaster.style.color = wrong ? "var(--error)" : "var(--success-d)";
+      if(state.examWrong.length){
+        const items=state.examWrong.map(i=>`<li><b>${WORDS[i].en}</b><span>${WORDS[i].es}</span></li>`).join("");
+        el.missList.innerHTML=`<h4>${ICON_NO} Words to review</h4><ul>${items}</ul>`;
+        el.missList.classList.remove("hidden");
+      } else el.missList.classList.add("hidden");
+      showDone(true); el.bar.style.width="100%";
+      if(pass){ burst(); setTimeout(burst,280); }
+    }
+    function showDone(on){ el.doneView.classList.toggle("hidden",!on); el.practiceView.classList.toggle("hidden",on); }
+
+    /* ============ CONFETTI ============ */
+    const CC=["#4f46e5","#f59e0b","#16a34a","#db2777","#0891b2"];
+    function burst(){
+      for(let i=0;i<30;i++){
+        const c=document.createElement("div"); const s=6+Math.random()*7;
+        c.style.cssText=`position:fixed;z-index:50;top:26%;left:50%;width:${s}px;height:${s}px;background:${CC[i%CC.length]};border-radius:2px;pointer-events:none`;
+        document.body.appendChild(c);
+        const a=Math.random()*Math.PI*2, d=130+Math.random()*230;
+        c.animate([{transform:"translate(-50%,-50%) rotate(0)",opacity:1},
+          {transform:`translate(${Math.cos(a)*d}px,${Math.sin(a)*d-90}px) rotate(${Math.random()*720}deg)`,opacity:0}],
+          {duration:900+Math.random()*500,easing:"cubic-bezier(.2,.7,.3,1)"}).onfinish=()=>c.remove();
+      }
+    }
+
+    /* ============ PRONUNCIATION COACH ============ */
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    let listening=false, mediaRec=null, recChunks=[], recStream=null, recTimer=null, browserRecog=null;
+
+    function lev(a,b){
+      const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i].concat(Array(n).fill(0)));
+      for(let j=0;j<=n;j++) d[0][j]=j;
+      for(let i=1;i<=m;i++) for(let j=1;j<=n;j++)
+        d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+      return d[m][n];
+    }
+    // Soundex: compara por SONIDO (no por letras), así "coems"/"coens" ≈ "coins".
+    function soundex(s){
+      s=(s||"").toUpperCase().replace(/[^A-Z]/g,"");
+      if(!s) return "";
+      const code={B:1,F:1,P:1,V:1,C:2,G:2,J:2,K:2,Q:2,S:2,X:2,Z:2,D:3,T:3,L:4,M:5,N:5,R:6};
+      let out=s[0], prev=code[s[0]]||0;
+      for(let i=1;i<s.length;i++){
+        const c=code[s[i]]||0;
+        if(c!==0 && c!==prev) out+=c;
+        if(s[i]!=="H" && s[i]!=="W") prev=c;
+        if(out.length>=4) break;
+      }
+      return (out+"000").slice(0,4);
+    }
+    const phNorm=s=>(s||"").toLowerCase().replace(/[^a-z\s\-]/g,"").replace(/c(?=[eiy])/g,"s").replace(/ph/g,"f").replace(/x/g,"ks").replace(/qu/g,"kw");
+    const soundexPhrase=s=>phNorm(s).split(/[\s\-]+/).filter(Boolean).map(soundex).join(" ");
+
+    function gradePron(heard){
+      const w=cur(), t=norm(w.en), h=norm(heard);
+      if(!h){ el.heard.innerHTML="I didn't hear anything — tap and speak a little louder, please."; return; }
+      // pronunciación = juzgar por SONIDO, con tolerancia (la transcripción no es perfecta)
+      const sim=1-lev(h,t)/Math.max(t.length,1);
+      const good = (h===t) || (soundexPhrase(h)===soundexPhrase(t)) || (sim>=0.84);
+      if(good){
+        renderSlots(w.en,{done:true,guess:t});           // palabra en verde
+        state.streak++; el.statStreak.textContent=state.streak;
+        el.heard.innerHTML=`<span class="msg win">${ICON_OK} Great! That sounded right.</span>`;
+        burst();
+      }else{
+        renderSlots(w.en,{reveal:999});                  // muestra la palabra (neutral) para imitar
+        el.heard.innerHTML=`<span class="msg lose">${ICON_NO} Let's try again</span>`
+          +`<span class="heardline">Listen and copy: “<b>${w.en}</b>”</span>`;
+        speakWord(); // reproduce la correcta para imitar
+      }
+    }
+
+    // 1) Mejor: ElevenLabs Scribe (más preciso). Necesita key + internet.
+    async function scribeSTT(blob){
+      const fd=new FormData();
+      fd.append("file", blob, "rec.webm");
+      fd.append("model_id","scribe_v1");
+      fd.append("language_code","eng");
+      const res=await fetch("https://api.elevenlabs.io/v1/speech-to-text",{method:"POST",headers:{"xi-api-key":saved.elKey},body:fd});
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      return ((await res.json()).text||"").trim();
+    }
+    function stopStream(){ clearTimeout(recTimer); if(recStream){ recStream.getTracks().forEach(t=>t.stop()); recStream=null; } }
+    async function startScribe(){
+      try{ recStream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+      catch(e){ el.heard.innerHTML="Allow microphone access to practise speaking."; return; }
+      recChunks=[];
+      try{ mediaRec=new MediaRecorder(recStream); }catch(e){ stopStream(); return browserListen(); }
+      mediaRec.ondataavailable=e=>{ if(e.data&&e.data.size) recChunks.push(e.data); };
+      mediaRec.onstop=async()=>{
+        listening=false; el.micBtn.classList.remove("listening"); stopStream();
+        el.heard.innerHTML="Checking your pronunciation…";
+        try{ gradePron(await scribeSTT(new Blob(recChunks,{type:mediaRec.mimeType||"audio/webm"}))); }
+        catch(err){ el.heard.innerHTML = String(err).includes("401")
+          ? "Your ElevenLabs key is invalid — fix it in the ⚙ button."
+          : "Couldn't check — needs an internet connection. Try again."; }
+      };
+      mediaRec.start();
+      listening=true; el.micBtn.classList.add("listening");
+      el.heard.innerHTML="Listening… say the word!";
+      recTimer=setTimeout(()=>{ if(mediaRec&&mediaRec.state!=="inactive") mediaRec.stop(); }, 3000);
+    }
+
+    // 2) Respaldo sin key: reconocimiento del navegador
+    function setupBrowserRecog(){
+      if(!SR) return null;
+      const r=new SR(); r.lang="en-GB"; r.interimResults=false; r.maxAlternatives=4; r.continuous=false;
+      r.onstart=()=>{ listening=true; el.micBtn.classList.add("listening"); el.heard.innerHTML="Listening… say the word!"; };
+      r.onend=()=>{ listening=false; el.micBtn.classList.remove("listening"); };
+      r.onerror=(e)=>{ listening=false; el.micBtn.classList.remove("listening");
+        el.heard.innerHTML = (e.error==="not-allowed"||e.error==="service-not-allowed")?"Allow microphone access, then try again."
+          : e.error==="network"?"Pronunciation check needs an internet connection."
+          : e.error==="no-speech"?"I didn't hear anything — tap and speak a little louder."
+          : "Try again — tap the mic and say the word."; };
+      r.onresult=(ev)=>{ let best=""; try{ best=ev.results[0][0].transcript; }catch(e){} gradePron(best); };
+      return r;
+    }
+    function browserListen(){
+      if(!browserRecog) browserRecog=setupBrowserRecog();
+      if(!browserRecog){ showWarn("Pronunciation check needs Google Chrome (or add your ElevenLabs key)."); return; }
+      try{ browserRecog.start(); }catch(e){}
+    }
+    function micTap(){
+      if(listening){
+        if(mediaRec&&mediaRec.state!=="inactive"){ mediaRec.stop(); return; }
+        if(browserRecog){ try{ browserRecog.stop(); }catch(e){} return; }
+      }
+      stopClips();
+      if(saved.elKey) startScribe(); else browserListen();
+    }
+
+    /* ============ MODE / UI ============ */
+    function setMode(m){
+      state.mode=m;
+      el.modePractice.setAttribute("aria-pressed",String(m==="practice"));
+      el.modeExam.setAttribute("aria-pressed",String(m==="exam"));
+      el.modeSay.setAttribute("aria-pressed",String(m==="say"));
+      const typing=(m==="practice"||m==="exam");
+      el.typeZone.classList.toggle("hidden",!typing);
+      el.voiceZone.classList.toggle("hidden",m!=="say");
+      el.toolsRow.classList.toggle("hidden",m==="exam");   // sin pistas en el examen
+      el.answerInput.placeholder = m==="exam" ? "Type the word (exam)…" : "Spell the word…";
+      hideWarn();              // sin carteles rojos: el dictado es 100% offline
+      updateEngineUI();        // guía sutil según el modo
+      if(typing) setTimeout(()=>el.answerInput.focus(),60);
+    }
+    const WARN_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>';
+    function showWarn(m){ el.warn.innerHTML=WARN_ICON+"<span>"+m+"</span>"; el.warn.classList.remove("hidden"); }
+    function hideWarn(){ el.warn.classList.add("hidden"); }
+
+    /* ============ EVENTS ============ */
+    el.playBtn.addEventListener("click",()=>speakWord());
+    el.lSay.addEventListener("click",()=>speakWord());
+    el.slowBtn.addEventListener("click",()=>speakSpell(false));
+    el.useItBtn.addEventListener("click",()=>speakSentence());
+    el.answerInput.addEventListener("input",renderLive);
+    el.answerForm.addEventListener("submit",e=>{ e.preventDefault(); if(!el.answerInput.value.trim()){el.answerInput.focus();return;} judge(el.answerInput.value); });
+    el.nextBtn.addEventListener("click",next);
+    el.repeatBtn.addEventListener("click",repeatWord);
+    el.micBtn.addEventListener("click",micTap);
+    el.modePractice.addEventListener("click",()=>{ setMode("practice"); buildQueue(); });
+    el.modeExam.addEventListener("click",()=>{ setMode("exam"); buildQueue(); });
+    el.modeSay.addEventListener("click",()=>{ setMode("say"); buildQueue(); });
+    el.catSel.addEventListener("change",()=>buildQueue());
+    el.reviewBtn.addEventListener("click",()=>{
+      if(state.lastExamWrong && state.lastExamWrong.length){ setMode("practice"); buildQueue(state.lastExamWrong); state.lastExamWrong=[]; }
+      else buildQueue();
+    });
+    el.newRoundBtn.addEventListener("click",()=>buildQueue());
+    el.resetBtn.addEventListener("click",()=>{ if(confirm("¿Borrar el progreso guardado de Ian? Las palabras dominadas volverán a cero.")){ saved.mastered={}; persist(); state.streak=0; buildQueue(); } });
+
+    /* ---- Pronunciation key modal ---- */
+    function openModal(){
+      el.elKeyInput.value=saved.elKey;
+      el.elTestMsg.textContent=""; el.elTestMsg.className="modal-msg";
+      el.audioModal.classList.remove("hidden");
+    }
+    function closeModal(){ el.audioModal.classList.add("hidden"); }
+    el.audioBtn.addEventListener("click",openModal);
+    el.modalClose.addEventListener("click",closeModal);
+    el.audioModal.addEventListener("click",e=>{ if(e.target===el.audioModal) closeModal(); });
+    el.modalSave.addEventListener("click",()=>{
+      saved.elKey=el.elKeyInput.value.trim();
+      persist(); hideWarn(); closeModal();
+    });
+    el.elTestBtn.addEventListener("click",async()=>{
+      const key=el.elKeyInput.value.trim();
+      if(!key){ el.elTestMsg.textContent="Pegá tu API key primero."; el.elTestMsg.className="modal-msg err"; return; }
+      el.elTestMsg.textContent="Testing…"; el.elTestMsg.className="modal-msg";
+      try{ await elSpeak("Ready to practise pronunciation.",1,key);
+        el.elTestMsg.textContent="✓ Key válida. La corrección de pronunciación está lista."; el.elTestMsg.className="modal-msg ok";
+      }catch(err){
+        const s=String(err);
+        el.elTestMsg.textContent = s.includes("401") ? "✕ API key inválida o sin permiso."
+          : s.includes("429") ? "✕ Sin créditos / límite alcanzado."
+          : "✕ No se pudo conectar. Revisá tu internet y la key.";
+        el.elTestMsg.className="modal-msg err";
+      }
+    });
+    document.addEventListener("keydown",e=>{ if(e.key==="Enter"&&state.answered&&!el.nextRow.classList.contains("hidden")&&document.activeElement!==el.answerInput) next(); });
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
+
+    /* ============ INIT ============ */
+    fillTopics();
+    if(synth){ loadVoices(); synth.onvoiceschanged=loadVoices; setTimeout(loadVoices,300); }
+    updateEngineUI();
+    setMode("practice");
+    buildQueue();
+  })();
+  </script>
+</body>
+</html>
