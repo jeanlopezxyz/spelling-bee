@@ -819,7 +819,7 @@
       showLearn(w,ok);
       el.nextRow.classList.remove("hidden");
       el.statMaster.textContent=masteredCount(); el.statStreak.textContent=state.streak;
-      if(ok){ autoTimer=setTimeout(next,1600); } else el.nextBtn.focus(); // práctica pasa solas al acertar
+      el.nextBtn.focus(); // en práctica NO avanza solo: el usuario decide cuándo continuar
     }
     function showLearn(w,ok){
       el.lWord.textContent=w.en; el.lEs.textContent=w.es;
