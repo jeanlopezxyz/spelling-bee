@@ -919,18 +919,29 @@
       }
     }
 
-    // 1) Mejor: ElevenLabs Scribe (más preciso). Necesita key + internet.
+    // Reconocimiento fiable con ElevenLabs Scribe.
+    const canServer=()=> location.protocol==="http:"||location.protocol==="https:";
+    // a) Endpoint del servidor (Cloudflare Function) — la key vive en el servidor, no en el navegador
+    async function serverSTT(blob){
+      const fd=new FormData(); fd.append("file", blob, "rec.webm");
+      const res=await fetch("/api/pronounce",{method:"POST",body:fd});
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      return ((await res.json()).text||"").trim();
+    }
+    // b) Directo con la key propia (para uso local sin servidor)
     async function scribeSTT(blob){
       const fd=new FormData();
-      fd.append("file", blob, "rec.webm");
-      fd.append("model_id","scribe_v1");
-      fd.append("language_code","eng");
+      fd.append("file", blob, "rec.webm"); fd.append("model_id","scribe_v1"); fd.append("language_code","eng");
       const res=await fetch("https://api.elevenlabs.io/v1/speech-to-text",{method:"POST",headers:{"xi-api-key":saved.elKey},body:fd});
       if(!res.ok) throw new Error("HTTP "+res.status);
       return ((await res.json()).text||"").trim();
     }
+    async function transcribe(blob){
+      if(canServer()){ try{ return await serverSTT(blob); }catch(e){ if(!saved.elKey) throw e; } }
+      return await scribeSTT(blob); // usa la key propia
+    }
     function stopStream(){ clearTimeout(recTimer); if(recStream){ recStream.getTracks().forEach(t=>t.stop()); recStream=null; } }
-    async function startScribe(){
+    async function startRecording(){
       try{ recStream=await navigator.mediaDevices.getUserMedia({audio:true}); }
       catch(e){ el.heard.innerHTML="Allow microphone access to practise speaking."; return; }
       recChunks=[];
@@ -939,9 +950,9 @@
       mediaRec.onstop=async()=>{
         listening=false; el.micBtn.classList.remove("listening"); stopStream();
         el.heard.innerHTML="Checking your pronunciation…";
-        try{ gradePron(await scribeSTT(new Blob(recChunks,{type:mediaRec.mimeType||"audio/webm"}))); }
+        try{ gradePron(await transcribe(new Blob(recChunks,{type:mediaRec.mimeType||"audio/webm"}))); }
         catch(err){ el.heard.innerHTML = String(err).includes("401")
-          ? "Your ElevenLabs key is invalid — fix it in the ⚙ button."
+          ? "Pronunciation service is misconfigured (key)."
           : "Couldn't check — needs an internet connection. Try again."; }
       };
       mediaRec.start();
@@ -975,7 +986,7 @@
         if(browserRecog){ try{ browserRecog.stop(); }catch(e){} return; }
       }
       stopClips();
-      if(saved.elKey) startScribe(); else browserListen();
+      if(canServer() || saved.elKey) startRecording(); else browserListen();
     }
 
     /* ============ MODE / UI ============ */
