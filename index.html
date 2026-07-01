@@ -899,13 +899,20 @@
     }
     const phNorm=s=>(s||"").toLowerCase().replace(/[^a-z\s\-]/g,"").replace(/c(?=[eiy])/g,"s").replace(/ph/g,"f").replace(/x/g,"ks").replace(/qu/g,"kw");
     const soundexPhrase=s=>phNorm(s).split(/[\s\-]+/).filter(Boolean).map(soundex).join(" ");
+    const wsx=w=>soundex(phNorm(w));
+    // ¿la palabra objetivo aparece (por sonido) dentro de lo que se oyó? tolerante a ruido/palabras extra
+    function pronOK(heard, target){
+      const hw=norm(heard).split(/[\s\-]+/).filter(Boolean);
+      const tw=norm(target).split(/[\s\-]+/).filter(Boolean);
+      if(!hw.length || !tw.length) return false;
+      return tw.every(t => hw.some(h => h===t || wsx(h)===wsx(t) || (1-lev(h,t)/Math.max(t.length,1))>=0.72));
+    }
 
     function gradePron(heard){
       const w=cur(), t=norm(w.en), h=norm(heard);
       if(!h){ el.heard.innerHTML="I didn't hear anything — tap and speak a little louder, please."; return; }
       // pronunciación = juzgar por SONIDO, con tolerancia (la transcripción no es perfecta)
-      const sim=1-lev(h,t)/Math.max(t.length,1);
-      const good = (h===t) || (soundexPhrase(h)===soundexPhrase(t)) || (sim>=0.84);
+      const good = pronOK(heard, w.en);
       if(good){
         renderSlots(w.en,{done:true,guess:t});           // palabra en verde
         state.streak++; el.statStreak.textContent=state.streak;
