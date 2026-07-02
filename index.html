@@ -254,7 +254,7 @@
           </button>
           <button id="modeSay" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></svg>
-            Say it
+            Spell aloud
           </button>
         </div>
       </div>
@@ -312,7 +312,7 @@
           <button class="mic" id="micBtn" aria-label="Speak the word">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></svg>
           </button>
-          <p class="heard" id="heard">Tap the mic and say the word — I'll check your pronunciation</p>
+          <p class="heard" id="heard">Tap the mic and spell the word out loud — say each letter</p>
         </div>
 
         <div id="feedback" aria-live="polite"></div>
@@ -664,7 +664,7 @@
     }
     function updateEngineUI(){
       el.listenHint.innerHTML =
-        state.mode==="say"  ? 'Listen first, then tap the mic to say it'
+        state.mode==="say"  ? 'Tap the mic and spell the word out loud, letter by letter'
       : state.mode==="exam" ? 'Listen and spell the word — no hints'
       :                       'Natural <span class="engine-tag">British</span> voice — tap to listen';
     }
@@ -772,7 +772,7 @@
       renderSlots(w.en,{reveal:0});
       el.feedback.innerHTML=""; el.learn.classList.add("hidden"); el.nextRow.classList.add("hidden");
       el.answerInput.value=""; el.answerInput.disabled=false;
-      el.heard.innerHTML="Tap the mic and say the word out loud";
+      el.heard.innerHTML="Tap the mic and spell the word out loud — say each letter";
       el.count.textContent=(state.i+1)+" / "+state.roundTotal;
       el.bar.style.width=(state.i/state.roundTotal*100)+"%";
       el.statMaster.textContent=masteredCount(); el.statStreak.textContent=state.streak;
@@ -908,21 +908,25 @@
       return tw.every(t => hw.some(h => h===t || wsx(h)===wsx(t) || (1-lev(h,t)/Math.max(t.length,1))>=0.72));
     }
 
+    // El micrófono valida el DELETREO por voz, letra por letra (no la palabra).
     function gradePron(heard){
-      const w=cur(), t=norm(w.en), h=norm(heard);
-      if(!h){ el.heard.innerHTML="I didn't hear anything — tap and speak a little louder, please."; return; }
-      // pronunciación = juzgar por SONIDO, con tolerancia (la transcripción no es perfecta)
-      const good = pronOK(heard, w.en);
-      if(good){
-        renderSlots(w.en,{done:true,guess:t});           // palabra en verde
+      const w=cur();
+      const targetLetters = w.en.replace(/[^a-z]/gi,"").toLowerCase();
+      const heardLetters  = norm(heard).replace(/[^a-z]/gi,"").toLowerCase();
+      if(!heardLetters){ el.heard.innerHTML="I didn't catch it — tap the mic and spell the word out loud, letter by letter."; return; }
+      // alinea las letras oídas a las posiciones de letra de la palabra (respeta espacios/guiones)
+      let aligned="", li=0;
+      for(const ch of w.en){ if(/[a-z]/i.test(ch)){ aligned+=(heardLetters[li]||" "); li++; } else aligned+=ch; }
+      renderSlots(w.en,{done:true,guess:aligned}); // pinta verde/rojo letra por letra
+      const ok = heardLetters===targetLetters;
+      if(ok){
         state.streak++; el.statStreak.textContent=state.streak;
-        el.heard.innerHTML=`<span class="msg win">${ICON_OK} Great! That sounded right.</span>`;
+        el.heard.innerHTML=`<span class="msg win">${ICON_OK} Perfect spelling!</span>`;
         burst();
       }else{
-        renderSlots(w.en,{reveal:999});                  // muestra la palabra (neutral) para imitar
-        el.heard.innerHTML=`<span class="msg lose">${ICON_NO} Let's try again</span>`
-          +`<span class="heardline">Listen and copy: “<b>${w.en}</b>”</span>`;
-        speakWord(); // reproduce la correcta para imitar
+        el.heard.innerHTML=`<span class="msg lose">${ICON_NO} Not quite — I heard “${heardLetters.toUpperCase().split("").join("-")}”</span>`
+          +`<span class="heardline">The word is “<b>${w.en}</b>” — copy the red letters.</span>`;
+        speakSpell(true); // Alice deletrea la correcta
       }
     }
 
