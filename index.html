@@ -875,6 +875,7 @@
     /* ============ PRONUNCIATION COACH ============ */
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     let listening=false, mediaRec=null, recChunks=[], recStream=null, recTimer=null, browserRecog=null;
+    let audioCtx=null, vadRAF=null; // detector de voz/silencio
 
     function lev(a,b){
       const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i].concat(Array(n).fill(0)));
@@ -960,7 +961,34 @@
       if(canServer()){ try{ return await serverSTT(blob); }catch(e){ if(!saved.elKey) throw e; } }
       return await scribeSTT(blob); // usa la key propia
     }
-    function stopStream(){ clearTimeout(recTimer); if(recStream){ recStream.getTracks().forEach(t=>t.stop()); recStream=null; } }
+    function stopVAD(){ if(vadRAF) cancelAnimationFrame(vadRAF); vadRAF=null; if(audioCtx){ try{ audioCtx.close(); }catch(e){} audioCtx=null; } }
+    function stopStream(){ clearTimeout(recTimer); stopVAD(); if(recStream){ recStream.getTracks().forEach(t=>t.stop()); recStream=null; } }
+    function stopRecording(){ if(mediaRec && mediaRec.state!=="inactive") mediaRec.stop(); }
+    // Detección de voz/silencio: corta ~2s DESPUÉS de que Ian deja de hablar (sin límite fijo)
+    function startVAD(){
+      try{
+        const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+        audioCtx=new AC();
+        const src=audioCtx.createMediaStreamSource(recStream);
+        const an=audioCtx.createAnalyser(); an.fftSize=512; src.connect(an);
+        const buf=new Uint8Array(an.fftSize);
+        let spoke=false, lastLoud=0, t0=0;
+        const tick=(now)=>{
+          if(!listening){ return; }
+          if(!t0) t0=now;
+          an.getByteTimeDomainData(buf);
+          let sum=0; for(let i=0;i<buf.length;i++){ const d=buf[i]-128; sum+=d*d; }
+          const rms=Math.sqrt(sum/buf.length);
+          if(rms>7){ spoke=true; lastLoud=now; }        // hay voz
+          const silence=now-(lastLoud||now);
+          const elapsed=now-t0;
+          // corta si: ya habló y hubo 2s de silencio  ·  o pasó el tope de seguridad (25s)
+          if((spoke && silence>2000) || elapsed>25000){ stopRecording(); return; }
+          vadRAF=requestAnimationFrame(tick);
+        };
+        vadRAF=requestAnimationFrame(tick);
+      }catch(e){ /* sin VAD: queda el tap-para-terminar */ }
+    }
     async function startRecording(){
       try{ recStream=await navigator.mediaDevices.getUserMedia({audio:true}); }
       catch(e){ el.heard.innerHTML="Allow microphone access to practise speaking."; return; }
@@ -969,7 +997,7 @@
       mediaRec.ondataavailable=e=>{ if(e.data&&e.data.size) recChunks.push(e.data); };
       mediaRec.onstop=async()=>{
         listening=false; el.micBtn.classList.remove("listening"); stopStream();
-        el.heard.innerHTML="Checking your pronunciation…";
+        el.heard.innerHTML="Checking your spelling…";
         try{ gradePron(await transcribe(new Blob(recChunks,{type:mediaRec.mimeType||"audio/webm"}))); }
         catch(err){ el.heard.innerHTML = String(err).includes("401")
           ? "Pronunciation service is misconfigured (key)."
@@ -977,8 +1005,9 @@
       };
       mediaRec.start();
       listening=true; el.micBtn.classList.add("listening");
-      el.heard.innerHTML="Listening… say the word!";
-      recTimer=setTimeout(()=>{ if(mediaRec&&mediaRec.state!=="inactive") mediaRec.stop(); }, 3000);
+      el.heard.innerHTML="Listening… spell the whole word, then pause (or tap the mic to finish)";
+      startVAD();                                            // corta por silencio, sin límite fijo
+      recTimer=setTimeout(stopRecording, 30000);             // tope de seguridad
     }
 
     // 2) Respaldo sin key: reconocimiento del navegador
